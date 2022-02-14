@@ -1,73 +1,70 @@
 package com.jamessaboia.fitnesstracker;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.inputmethod.InputMethod;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
-public class ImcActivity extends AppCompatActivity {
+public class TmbActivity extends AppCompatActivity {
 
     private EditText editHeight;
     private EditText editWeight;
-    private Button btnImcSend;
+    private EditText editAge;
+    private Spinner spinner;
+    private Button btnTmbSend;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_imc);
+        setContentView(R.layout.activity_tmb);
 
-        editHeight = findViewById(R.id.edit_imc_height);
-        editWeight = findViewById(R.id.edit_imc_weight);
-        btnImcSend = findViewById(R.id.btn_imc_send);
+        editHeight = findViewById(R.id.edit_tmb_height);
+        editWeight = findViewById(R.id.edit_tmb_weight);
+        editAge = findViewById(R.id.edit_tmb_age);
+        spinner = findViewById(R.id.spinner_tmb_lifestyle);
+        btnTmbSend = findViewById(R.id.btn_tmb_send);
 
-        btnImcSend.setOnClickListener(view -> {
-
+        btnTmbSend.setOnClickListener(v -> {
             if (!validate()) {
-                Toast.makeText(ImcActivity.this, R.string.fields_message, Toast.LENGTH_LONG).show();
+                Toast.makeText(TmbActivity.this, R.string.fields_message, Toast.LENGTH_LONG).show();
                 return;
             }
 
             String sHeight = editHeight.getText().toString();
             String sWeight = editWeight.getText().toString();
-
+            String sAge = editAge.getText().toString();
 
             int height = Integer.parseInt(sHeight);
             int weight = Integer.parseInt(sWeight);
+            int age = Integer.parseInt(sAge);
 
-            double result = calculateImc(height, weight);
+            double result = calculateTmb(height, weight, age);
+            double tmb = tmbResponse(result);
+            Log.d("Teste", "" + tmb);
 
-            Log.d("TEXTE", "Resultado " + result);
-
-            int imcResponseId = imcResponse(result);
-
-            AlertDialog dialog = new AlertDialog.Builder(ImcActivity.this)
-                    .setTitle(getString(R.string.imc_response, result))
-                    .setMessage(imcResponseId)
+            AlertDialog dialog = new AlertDialog.Builder(TmbActivity.this)
+                    .setMessage(getString(R.string.tmb_response, tmb))
                     .setPositiveButton(android.R.string.ok, (dialogInterface, i) -> {
                     })
                     .setNegativeButton(R.string.save, ((dialog1, which) -> {
                         new Thread(() -> {
-                            long calcId = SqlHelper.getInstance(ImcActivity.this).addItem("imc", result);
+                            long calcId = SqlHelper.getInstance(TmbActivity.this).addItem("tmb", tmb);
 
                             runOnUiThread(() ->{
                                 if (calcId > 0)
-
-                                    Toast.makeText(ImcActivity.this, R.string.saved, Toast.LENGTH_SHORT).show();
-                                    openListCalcActivity();
+                                    Toast.makeText(TmbActivity.this, R.string.saved, Toast.LENGTH_SHORT).show();
+                                openListCalcActivity();
                             });
                         }).start();
                     }))
@@ -75,12 +72,10 @@ public class ImcActivity extends AppCompatActivity {
 
             dialog.show();
 
-
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(editWeight.getWindowToken(), 0);
             imm.hideSoftInputFromWindow(editHeight.getWindowToken(), 0);
         });
-
 
     }
 
@@ -103,47 +98,42 @@ public class ImcActivity extends AppCompatActivity {
 
     private void openListCalcActivity() {
 
-        Intent intent = new Intent(ImcActivity.this, ListCalcActivity.class);
-
-        intent.putExtra("type", "imc");
+        Intent intent = new Intent(TmbActivity.this, ListCalcActivity.class);
+        intent.putExtra("type", "tmb");
         startActivity(intent);
     }
 
-    @StringRes
-
-    private int imcResponse(double imc) {
-        if (imc < 15)
-            return R.string.imc_severely_low_weight;
-        else if (imc < 16)
-            return R.string.imc_very_low_weight;
-        else if (imc < 18.5)
-            return R.string.imc_low_weight;
-        else if (imc < 25)
-            return R.string.normal;
-        else if (imc < 30)
-            return R.string.imc_high_weight;
-        else if (imc < 35)
-            return R.string.imc_so_high_weight;
-        else if (imc < 40)
-            return R.string.imc_severely_high_weight;
-        else
-            return R.string.imc_extreme_weight;
-
-
+    private double calculateTmb(int height, int weight, int age) {
+        return 66 + (weight * 13.8) + (5 * height) - (6.8 * age);
     }
 
-    private double calculateImc(int height, int weight){
-
-        return weight / ( ((double) height / 100) * ((double) height / 100) );
-
-
+    private double tmbResponse(double tmb) {
+        int index = spinner.getSelectedItemPosition();
+        switch (index) {
+            case 0:
+                return tmb * 1.2;
+            case 1:
+                return tmb * 1.375;
+            case 2:
+                return tmb * 1.55;
+            case 3:
+                return tmb * 1.725;
+            case 4:
+                return tmb * 1.9;
+            default:
+                return 0;
+        }
     }
+
 
     private boolean validate() {
         return (!editWeight.getText().toString().startsWith("0") // n pode começar com zero
                 && !editHeight.getText().toString().startsWith("0") // n pode começar com zero
+                && !editAge.getText().toString().startsWith("0") // n pode começar com zero
                 && !editWeight.getText().toString().isEmpty() // o campo n pode estar vazio
-                && !editHeight.getText().toString().isEmpty()); // o campo n pode estar vazio
+                && !editHeight.getText().toString().isEmpty() // o campo n pode estar vazio
+                && !editAge.getText().toString().isEmpty()); // o campo n pode estar vazio
+
 
     }
 

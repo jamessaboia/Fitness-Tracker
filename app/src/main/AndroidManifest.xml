@@ -10,10 +10,19 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FitnessTracker">
 
+        <activity android:name=".ListCalcActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:exported="false"
+                android:value=".MainActivity" />
+        </activity>
+
+        <activity
+            android:name=".TmbActivity"
+            android:exported="false" />
         <activity
             android:name=".ImcActivity"
             android:exported="false" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true">
